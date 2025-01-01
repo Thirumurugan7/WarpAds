@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   try {
     const metadata = await request.json();
     const response = await fetch(
-      "https://agents.phala.network/ipfs/bafybeid7aiwj3y2o2zgiro2zeg3xqvp6nbbcivgnidbdohyi3x5lqxgwiu/0",
+      "https://agents.phala.network/ipfs/bafkreicetp4iwmc4vdj245qrdisacxtyspxi4kic3oifz2lalub2xfswpm",
       {
         method: "POST",
         headers: {
@@ -17,6 +17,7 @@ export async function POST(request: Request) {
         body: JSON.stringify(metadata), // Forward the body from the original request
       }
     );
+    
 
     if (!response.ok) {
       throw new Error(`Network response was not ok: ${response.statusText}`);

@@ -1,123 +1,126 @@
 "use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { SignInButton, useProfile } from "@farcaster/auth-kit";
 import { useAccount } from "wagmi";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { WarpAdsForm } from "@/components/WarpAdsForm";
+import { BuyAd } from "@/components/BuyAd";
+import { ClaimRoyalties } from "@/components/ClaimRoyalties";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import { Badge } from "@/components/ui/badge";
-import WarpAdsGenerate from "@/components/WarpAdsFormGenerate";
-import { SignInButton } from "@farcaster/auth-kit";
-import { useProfile } from "@farcaster/auth-kit";
-import BuyAd from "@/components/BuyAd";
-import ClaimAuthor from "@/components/ClaimAuthor";
-import ClaimInfluencer from "@/components/ClaimInfluencer";
+import { Tab } from "@/types";
+import { TABS } from "@/constants";
+
+
+
 
 export default function Home() {
-  const [currentTab, setCurrentTab] = useState("generate");
+  const [currentTab, setCurrentTab] = useState<Tab>("generate");
   const account = useAccount();
-  const {
-    isAuthenticated,
-    profile: { username, fid },
-  } = useProfile();
+  const { isAuthenticated, profile } = useProfile();
+  const { username, fid } = profile || {};
 
-  useEffect(() => {}, []);
+  const renderTabContent = () => {
+    if (!fid || typeof fid !== 'number') return null;
+
+    switch (currentTab) {
+      case "generate":
+        return <WarpAdsForm fid={fid} />;
+      case "buy":
+        return <BuyAd fid={fid} />;
+      case "claim-author":
+      case "claim-influencer":
+        return (
+          <ClaimRoyalties
+            fid={fid}
+            type={currentTab === "claim-author" ? "author" : "influencer"}
+            username={username}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderAuthContent = () => {
+    if (!account?.address) {
+      return (
+        <div className="flex justify-center items-center flex-col p-8 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+          <h3 className="text-xl font-semibold mb-6">Connect your wallet to get started</h3>
+          <ConnectButton />
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex justify-center items-start flex-col w-full">
+        <div className="flex w-full justify-between items-center p-4 bg-zinc-50 dark:bg-zinc-900 rounded-lg">
+          <ConnectButton />
+          <SignInButton />
+        </div>
+
+        {account?.address && isAuthenticated && fid && (
+          <div className="mt-8 w-full">
+            <nav className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  className={`p-4 rounded-lg transition-all duration-200 
+                    ${currentTab === tab.id 
+                      ? 'bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-100' 
+                      : 'bg-zinc-50 dark:bg-zinc-900 hover:bg-violet-50 dark:hover:bg-violet-900/50'
+                    }
+                  `}
+                  onClick={() => setCurrentTab(tab.id)}
+                >
+                  <div className="text-lg font-medium">{tab.label}</div>
+                  <div className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                    {tab.description}
+                  </div>
+                </button>
+              ))}
+            </nav>
+
+            <div className="bg-white dark:bg-zinc-900 rounded-lg p-6">
+              {renderTabContent()}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <main className="container flex min-h-screen flex-col items-center justify-center p-10">
-      <div className="absolute top-5 right-5">
+    <main className="container min-h-screen py-12 px-4">
+      <div className="fixed top-5 right-5 z-10">
         <ModeToggle />
       </div>
-      <div className="relative flex place-items-center mb-2">
+
+      {/* Logo and Title Section */}
+      <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-12">
         <Image
           className="relative"
           src="/logo/logo.png"
-          alt="Logo"
+          alt="WarpAds Logo"
           width={180}
           height={180}
           priority
         />
-        <div className="mr-10">
-          <div className="text-4xl font-bold">
+        <div className="text-center md:text-left">
+          <h1 className="text-5xl font-bold mb-2">
             warp<span className="text-violet-400">ads</span>
-          </div>
-          <div className="text-lg ">farcaster ads protocol</div>
+          </h1>
+          <p className="text-xl text-zinc-600 dark:text-zinc-400">
+            The Next Generation Farcaster Ads Protocol
+          </p>
         </div>
       </div>
 
-      <section className="lg:max-w-5xl lg:w-full ">
-        <div className="ring-1 ring-zinc-700 rounded-xl p-8 w-full">
-          {!account?.address ? (
-            <div className="flex justify-center items-center flex-col">
-              <h3 className="text-md mb-5">
-                Connect your wallet to get started
-              </h3>
-              <ConnectButton />
-            </div>
-          ) : (
-            <div className="flex justify-center items-start flex-col">
-              <div className="flex w-full justify-between items-center">
-                <ConnectButton />
-                <span className={`bg-zinc-300 `}>
-                  <SignInButton />
-                </span>
-              </div>
-
-              {account?.address && isAuthenticated && fid && (
-                <div className="mt-10 flex justify-center items-between flex-col w-full">
-                  <div className="flex justify-center items-center gap-7">
-                    <div
-                      className={`cursor-pointer underline hover:text-violet-400 hover:cursor-pointer ${
-                        currentTab === "generate"
-                          ? "text-violet-400"
-                          : "text-zinc-700"
-                      }`}
-                      onClick={() => setCurrentTab("generate")}
-                    >
-                      Generate WarpAds URL
-                    </div>
-                    <div
-                      className={`cursor-pointer underline hover:text-violet-400 hover:cursor-pointer ${
-                        currentTab === "buy"
-                          ? "text-violet-400"
-                          : "text-zinc-700"
-                      }`}
-                      onClick={() => setCurrentTab("buy")}
-                    >
-                      Buy an Ad
-                    </div>
-                    <div
-                      className={`cursor-pointer underline hover:text-violet-400 hover:cursor-pointer ${
-                        currentTab === "claim-author"
-                          ? "text-violet-400"
-                          : "text-zinc-700"
-                      }`}
-                      onClick={() => setCurrentTab("claim-author")}
-                    >
-                      Claim author royalties
-                    </div>
-                    <div
-                      className={`cursor-pointer underline hover:text-violet-400 hover:cursor-pointer ${
-                        currentTab === "claim-influencer"
-                          ? "text-violet-400"
-                          : "text-zinc-700"
-                      }`}
-                      onClick={() => setCurrentTab("claim-influencer")}
-                    >
-                      Claim influencer royalties
-                    </div>
-                  </div>
-
-                  {currentTab === "generate" && <WarpAdsGenerate fid={fid} />}
-                  {currentTab === "buy" && <BuyAd fid={fid} />}
-                  {currentTab === "claim-author" && <ClaimAuthor fid={fid} />}
-                  {currentTab === "claim-influencer" && (
-                    <ClaimInfluencer fid={fid} />
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+      {/* Main Content Section */}
+      <section className="max-w-7xl mx-auto">
+        <div className="ring-1 ring-zinc-200 dark:ring-zinc-800 rounded-xl p-6 md:p-8">
+          {renderAuthContent()}
         </div>
       </section>
     </main>
